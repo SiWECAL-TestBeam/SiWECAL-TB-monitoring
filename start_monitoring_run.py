@@ -423,7 +423,26 @@ class EcalMonitoring:
         run_settings = as_tar(os.path.join(self.raw_run_folder, my_paths.run_settings))
         if run_settings.endswith(".tar.gz"):
             with tarfile.open(run_settings) as tar:
-                tar.extractall(path=self.output_dir)
+                def is_within_directory(directory, target):
+                    
+                    abs_directory = os.path.abspath(directory)
+                    abs_target = os.path.abspath(target)
+                
+                    prefix = os.path.commonprefix([abs_directory, abs_target])
+                    
+                    return prefix == abs_directory
+                
+                def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+                
+                    for member in tar.getmembers():
+                        member_path = os.path.join(path, member.name)
+                        if not is_within_directory(path, member_path):
+                            raise Exception("Attempted Path Traversal in Tar File")
+                
+                    tar.extractall(path, members, numeric_owner=numeric_owner) 
+                    
+                
+                safe_extract(tar, path=self.output_dir)
             assert os.path.exists(tmp_run_settings)
         else:
             shutil.copy(
@@ -849,7 +868,26 @@ class EcalMonitoring:
         tmp_path = os.path.join(tmp_dir, converted_name)
         if raw_file_path.endswith(".tar.gz"):
             with tarfile.open(raw_file_path) as tar:
-                tar.extractall(path=tmp_dir)
+                def is_within_directory(directory, target):
+                    
+                    abs_directory = os.path.abspath(directory)
+                    abs_target = os.path.abspath(target)
+                
+                    prefix = os.path.commonprefix([abs_directory, abs_target])
+                    
+                    return prefix == abs_directory
+                
+                def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+                
+                    for member in tar.getmembers():
+                        member_path = os.path.join(path, member.name)
+                        if not is_within_directory(path, member_path):
+                            raise Exception("Attempted Path Traversal in Tar File")
+                
+                    tar.extractall(path, members, numeric_owner=numeric_owner) 
+                    
+                
+                safe_extract(tar, path=tmp_dir)
             in_path = os.path.join(tmp_dir, raw_file_name)
             assert os.path.exists(in_path), in_path
         else:
